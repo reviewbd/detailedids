@@ -1,27 +1,40 @@
 local displayInfo = false
-local playerId, playerName, rpFirstName, rpLastName = nil, nil, nil, nil
+local playerInfo = {}
 
 -- Demande les infos au serveur
 RegisterCommand("id", function()
     TriggerServerEvent("requestPlayerInfo")
 end, false)
 
--- Reçoit les infos et les affiche au-dessus du joueur
+-- Reçoit et met à jour les infos en direct
 RegisterNetEvent("displayPlayerInfo")
-AddEventHandler("displayPlayerInfo", function(id, fivemName, firstName, lastName)
-    playerId, playerName, rpFirstName, rpLastName = id, fivemName, firstName, lastName
-    displayInfo = not displayInfo
+AddEventHandler("displayPlayerInfo", function(info)
+    playerInfo = info
+    displayInfo = true
+end)
+
+-- Mise à jour automatique (si job, nom RP ou UUID change)
+RegisterNetEvent("updatePlayerInfo")
+AddEventHandler("updatePlayerInfo", function(info)
+    playerInfo = info
 end)
 
 -- Affichage 3D du texte
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
-        if displayInfo and playerId then
+        if displayInfo and playerInfo.id then
             local playerPed = PlayerPedId()
             local playerCoords = GetEntityCoords(playerPed)
+
             DrawText3D(playerCoords.x, playerCoords.y, playerCoords.z + 1.2, 
-                ("🆔 %s | %s\n🎭 %s %s"):format(playerId, playerName, rpFirstName, rpLastName))
+                ("🆔 %s | %s\n🎭 %s %s\n🔑 %s\n💼 %s"):format(
+                    playerInfo.id, playerInfo.fivemName, 
+                    playerInfo.firstName, playerInfo.lastName, 
+                    playerInfo.uuid,
+                    playerInfo.job
+                )
+            )
         end
     end
 end)
